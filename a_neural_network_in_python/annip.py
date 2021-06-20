@@ -15,12 +15,12 @@ class NeuralNetwork:
 
 
     @staticmethod
-    def calculate_bias(self, error_prediction, prediction_n_layer, layer_n_bias):
+    def calculate_bias(error_prediction, prediction_n_layer, layer_n_bias):
         return error_prediction * prediction_n_layer * layer_n_bias
 
 
     @staticmethod
-    def _sigmoid(self, x):
+    def _sigmoid(x):
         """
         Aplies the Sigmoid Function to the input.
         It is used in this context as the 'activation function'
@@ -46,22 +46,55 @@ class NeuralNetwork:
             float: 0 => return <= 1
         
         """
-        return sigmoid(x) * (1 - sigmoid(x))  
+        return _sigmoid(x) * (1 - _sigmoid(x))  
 
-
+    @staticmethod
     def mean_square_error(prediction, target):
         return np.square(prediction - target)
 
-
+    @staticmethod
     def dmean_square(prediction, target):
         return 2 * (prediction - target)
 
-
+    @staticmethod
     def derror_dweights(derror_dprediction, dprediction_dlayer1, dlayer1_weights):
         return derror_dprediction * dprediction_dlayer1 * dlayer1_weights
     
 
-    def make_prediction(self, input_vector, self.weights, self.bias):
+    def train(self, input_vectors, targets, iterations):
+        cumulative_errors = []
+        for current_iteration in range(iterations):
+            # Pick a data instance at random
+            random_data_index = np.random.randint(len(input_vectors))
+
+            input_vector = input_vectors[random_data_index]
+            target = targets[random_data_index]
+
+           # Compute the gradients and update the weights
+            derror_dbias, derror_dweights = self._compute_gradients(
+                input_vector, target
+            )
+
+            self._update_parameters(derror_dbias, derror_dweights)
+
+            # Measure the cumulative error for all the instances
+            if current_iteration % 100 == 0:
+                cumulative_error = 0
+                # Loop through all the instances to measure the error
+                for data_instance_index in range(len(input_vectors)):
+                    data_point = input_vectors[data_instance_index]
+                    target = targets[data_instance_index]
+
+                    prediction = self.predict(data_point)
+                    error = np.square(prediction - target)
+
+                    cumulative_error = cumulative_error + error
+                cumulative_errors.append(cumulative_error)
+
+        return cumulative_errors
+    
+    
+    def prediction(self, input_vector):
         """Calculates the output for a single node on the following layer.
 
         Args:
@@ -74,7 +107,7 @@ class NeuralNetwork:
             """
             
         layer_n = np.dot(input_vector, self.weights) + self.bias
-        layer_nplusone = sigmoid(layer_n)
+        layer_nplusone = _sigmoid(layer_n)
         return layer_nplusone
 
     def _compute_gradients(self, input_vector, target):
